@@ -1,112 +1,124 @@
-﻿#include "stdio.h"
-#include <time.h>
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
 #include <stdlib.h>
-#include <locale.h>
+#include <clocale>
 
 struct Node {
-	int data;
-	struct Node* left;
-	struct Node* right;
+    int data;
+    struct Node* left;
+    struct Node* right;
 };
-
 
 struct Node* root = NULL;
 
+struct Node* CreateTree(struct Node* root, int data) {
+    if (root == NULL) {
+        root = (struct Node*)malloc(sizeof(struct Node));
+        if (root == NULL) {
+            printf("Ошибка выделения памяти");
+            exit(0);
+        }
+        root->left = NULL;
+        root->right = NULL;
+        root->data = data;
+        return root;
+    }
 
-struct Node* CreateTree(struct Node* root, struct Node* r, int data)
-{
-	if (r == NULL)
-	{
-		r = (struct Node*)malloc(sizeof(struct Node));
-		if (r == NULL)
-		{
-			printf("Ошибка выделения памяти");
-			exit(0);
-		}
+    if (data == root->data) {
+        return root;  // Если элемент уже есть в дереве, ничего не делаем
+    }
 
-		r->left = NULL;
-		r->right = NULL;
-		r->data = data;
-		if (root == NULL) return r;
+    if (data < root->data) {
+        root->left = CreateTree(root->left, data);  // Добавляем в левое поддерево
+    }
+    else {
+        root->right = CreateTree(root->right, data);  // Добавляем в правое поддерево
+    }
 
-		if (data > root->data) root->left = r;
-		else root->right = r;
-		return r;
-	}
-
-	if (data > r->data)
-		CreateTree(r, r->left, data);
-	else
-		CreateTree(r, r->right, data);
-
-	return root;
+    return root;
 }
 
+void print_tree(struct Node* r, int l) {
+    if (r == NULL) {
+        return;
+    }
 
-void print_tree(struct Node* r, int l)
-{
-
-	if (r == NULL)
-	{
-		return;
-	}
-
-	print_tree(r->right, l + 1);
-	for (int i = 0; i < l; i++)
-	{
-		printf(" ");
-	}
-
-	printf("%d\n", r->data);
-	print_tree(r->left, l + 1);
+    print_tree(r->right, l + 1);
+    for (int i = 0; i < l; i++) {
+        printf(" ");
+    }
+    printf("%d\n", r->data);
+    print_tree(r->left, l + 1);
 }
 
-struct Node* find(struct Node* root, int data) {
-	if (root->data == data) return root;
+struct Node* search(struct Node* root, int data) {
+    if (root == NULL) {
+        return NULL;  // Элемент не найден
+    }
 
-	if (root->data > data && root->right != NULL) find(root->right, data);
-	else if (root->left != NULL) find(root->left, data);
-	else return NULL;
+    if (root->data == data) {
+        return root;  // Элемент найден
+    }
+    else if (data < root->data) {
+        return search(root->left, data);  // Ищем в левом поддереве
+    }
+    else {
+        return search(root->right, data);  // Ищем в правом поддереве
+    }
 }
 
-int count(struct Node* root, int data, int cnt) {
-	if (root->data == data) cnt++;
+int countOccurrences(struct Node* root, int data) {
+    if (root == NULL) {
+        return 0;  // Нет элементов в поддереве
+    }
 
-	if (root->data >= data && root->right != NULL) cnt = count(root->right, data, cnt);
-	else if (root->left != NULL) cnt = count(root->left, data, cnt);
-	else return cnt;
+    int count = 0;
+    if (root->data == data) {
+        count = 1;  // Если значение найдено, увеличиваем счётчик
+    }
 
+    // Рекурсивно ищем в левом и правом поддеревьях
+    count += countOccurrences(root->left, data);
+    count += countOccurrences(root->right, data);
+
+    return count;
 }
 
+int main() {
+    setlocale(LC_ALL, "Russian");
 
+    int D, start = 1;
 
-int main()
-{
-	setlocale(LC_ALL, "");
-	int D, start = 1;
-	struct Node* r = NULL;
+    root = NULL;
+    printf("-1 - окончание построения дерева\n");
+    while (start) {
+        printf("Введите число: ");
+        scanf("%d", &D);
+        if (D == -1) {
+            printf("Построение дерева окончено\n\n");
+            start = 0;
+        }
+        else {
+            root = CreateTree(root, D);
+        }
+    }
 
-	root = NULL;
-	printf("-1 - окончание построения дерева\n");
-	while (start)
-	{
-		printf("Введите число: ");
-		scanf_s("%d", &D);
-		if (D == -1)
-		{
-			printf("Построение дерева окончено\n\n");
-			start = 0;
-		}
-		else
-			root = CreateTree(root, root, D);
-	}
+    print_tree(root, 0);
 
-	print_tree(root, 0);
+    printf("Введите число для поиска: ");
+    scanf("%d", &D);
+    struct Node* found = search(root, D);
+    if (found != NULL) {
+        printf("Число %d найдено в дереве.\n", D);
+    }
+    else {
+        printf("Число %d не найдено в дереве.\n", D);
+    }
 
-	r = find(root, 1);
-	if (r != NULL) printf("Найденный элемент = %d", r->data);
-	else printf("Элемент не найден");
+    printf("Введите число для подсчёта вхождений: ");
+    scanf("%d", &D);
+    int count = countOccurrences(root, D);
+    printf("Число %d встречается в дереве %d раз(а).\n", D, count);
 
-	scanf_s("%d", &D);
-	return 0;
+    return 0;
 }
